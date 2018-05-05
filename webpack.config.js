@@ -35,7 +35,14 @@ module.exports = {
         include: /(src)/,
         use: {
           loader: 'babel-loader',
-          options: pkg.babel,
+          options: pkg.babel || {
+            "presets": [
+              "env",
+              "stage-0",
+              "es2017",
+              "react"
+            ]
+          }
         }
       },
       {

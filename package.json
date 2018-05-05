@@ -3,15 +3,6 @@
   "version": "0.0.1",
   "description": "",
   "main": "webpack.config.js",
-  "babel": {
-    "presets": [
-      "env",
-      "latest",
-      "stage-0",
-      "es2017",
-      "react"
-    ]
-  },
   "author": "itsleeowen@gmail.com",
   "license": "MIT",
   "dependencies": {
@@ -22,7 +13,6 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-preset-es2017": "^6.24.1",
-    "babel-preset-latest": "^6.24.1",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
     "clean-webpack-plugin": "^0.1.19",
