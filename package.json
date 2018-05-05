@@ -1,6 +1,6 @@
 {
-  "name": "app-starter",
-  "version": "0.0.4",
+  "name": "webpack-config",
+  "version": "0.0.1",
   "description": "",
   "main": "src/index.js",
   "scripts": {
