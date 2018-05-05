@@ -1,9 +1,9 @@
 {
+  "author": "github.com/ItsLeeOwen",
   "name": "webpack-config",
   "version": "0.0.1",
-  "description": "",
+  "description": "generic react es2017 webpack config",
   "main": "webpack.config.js",
-  "author": "itsleeowen@gmail.com",
   "license": "MIT",
   "dependencies": {
     "ajv": "^6.4.0",
