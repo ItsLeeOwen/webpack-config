@@ -27,6 +27,7 @@ module.exports = {
   devServer: pkg.webpack.devServer,
   entry: pkg.webpack.js,
   output: pkg.webpack.output,
+  resolve: pkg.webpack.resolve,
   module: {
     rules: [
       {
@@ -106,6 +107,10 @@ function init(pkg) {
   pkg.webpack.env = env(pkg.webpack.env)
   pkg.webpack.html = html(pkg.webpack.entry)
   pkg.webpack.output = output(pkg.webpack.output)
+  pkg.webpack.resolve = {
+    ...pkg.webpack.resolve,
+    modules: ["src", "node_modules"]
+  }
 }
 
 function devServer(devServer) {
