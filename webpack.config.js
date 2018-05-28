@@ -33,7 +33,10 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: /(node_modules|bower_components)/,
-        include: /(src)/,
+        include: [
+          path.resolve(cwd, "src"),
+          path.resolve(cwd, "lib"),
+        ],
         use: {
           loader: 'babel-loader',
           options: pkg.babel || {
@@ -169,6 +172,6 @@ function output(output) {
 function resolve(resolve = {}) {
   return {
     ...resolve,
-    modules: ["src", "lib", "node_modules"].concat(resolve.modules || [])
+    modules: [path.resolve(cwd, "src"), path.resolve(cwd, "lib"), "node_modules"].concat(resolve.modules || [])
   }
 }
