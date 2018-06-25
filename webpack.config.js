@@ -15,121 +15,127 @@ const path = require("path"),
   webpack = require("webpack")
 
 const cwd = process.cwd(),
-  pkg = require(cwd + "/package.json"),
+  processEnvRegExp = /"process.env.(.*)"/gm,
   defaultOutputPath = "dist",
-  processEnvRegExp = /"process.env.(.*)"/gm
+  pkg = init()
 
-init(pkg)
-console.log("config::", JSON.stringify(pkg.webpack, null, 2))
-
-module.exports = {
-  devtool: "source-map",
-  mode: pkg.webpack.mode || "development",
-  devServer: pkg.webpack.devServer,
-  entry: pkg.webpack.js,
-  output: pkg.webpack.output,
-  resolve: pkg.webpack.resolve,
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        include: [
-          path.resolve(cwd, "src"),
-          path.resolve(cwd, "lib"),
-        ],
-        use: {
-          loader: 'babel-loader',
-          options: pkg.babel || {
-            "presets": [
-              "env",
-              "stage-0",
-              "es2017",
-              "react"
-            ]
+module.exports = function (opts = {}) {
+  let {
+    plugins = [],
+  } = opts
+  if (!pkg)
+    return
+  return {
+    devtool: "source-map",
+    mode: pkg.webpack.mode || "development",
+    devServer: pkg.webpack.devServer,
+    entry: pkg.webpack.js,
+    output: pkg.webpack.output,
+    resolve: pkg.webpack.resolve,
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          exclude: /(node_modules|bower_components)/,
+          include: [
+            path.resolve(cwd, "src"),
+            path.resolve(cwd, "lib"),
+          ],
+          use: {
+            loader: 'babel-loader',
+            options: pkg.babel || {
+              "presets": [
+                "env",
+                "stage-0",
+                "es2017",
+                "react"
+              ]
+            }
           }
+        },
+        {
+          test: /\.scss$/,
+          use: ExtractTextPlugin.extract({
+            fallback: 'style-loader',
+            use: [
+              {
+                loader: "css-loader",
+                options: {
+                  sourceMap: true,
+                }
+              }, {
+                loader: "sass-loader",
+                options: {
+                  outputStyle: 'compressed',
+                  sourceMap: true,
+                }
+              }]
+          })
         }
-      },
-      {
-        test: /\.scss$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            {
-              loader: "css-loader",
-              options: {
-                sourceMap: true,
-              }
-            }, {
-              loader: "sass-loader",
-              options: {
-                outputStyle: 'compressed',
-                sourceMap: true,
-              }
-            }]
-        })
-      }
-    ]
-  },
-  plugins: [
-    new CleanWebpackPlugin([pkg.webpack.output.path], {
-      root: cwd,
-    }),
-    new webpack.DefinePlugin(pkg.webpack.env),
-    new webpack.HotModuleReplacementPlugin(),
-    new ExtractTextPlugin({
-      filename: "[hash].[name].css",
-    }),
-    ...pkg.webpack.html,
-    new ScriptExtHtmlWebpackPlugin({
-      defaultAttribute: 'defer'
-    }),
-    // copy text based files & transform process.env vars
-    new CopyWebpackPlugin([
-      {
-        from: "**/*.+(json|txt|md)",
-        transform: (content, path) => content.toString().replace(processEnvRegExp, (match, $1) => `"${process.env[$1]}"`)
-      }
-    ], {
-        context: pkg.webpack.src || 'src',
+      ]
+    },
+    plugins: [
+      new CleanWebpackPlugin([pkg.webpack.output.path], {
+        root: cwd,
       }),
-    // copy misc assets
-    new CopyWebpackPlugin([
-      {
-        from: "**/*",
-      }
-    ], {
-        context: pkg.webpack.src || 'src',
-        ignore: [
-          "*.js",
-          "*.scss",
-          "*.css",
-          "*.html",
-          "*.map",
-          "*.json",
-          "*.txt",
-          "*.md",
-        ],
+      new webpack.DefinePlugin(pkg.webpack.env),
+      new webpack.HotModuleReplacementPlugin(),
+      new ExtractTextPlugin({
+        filename: "[hash].[name].css",
       }),
-  ]
+      ...pkg.webpack.html,
+      new ScriptExtHtmlWebpackPlugin({
+        defaultAttribute: 'defer'
+      }),
+      // copy text based files & transform process.env vars
+      new CopyWebpackPlugin([
+        {
+          from: "**/*.+(json|txt|md)",
+          transform: (content, path) => content.toString().replace(processEnvRegExp, (match, $1) => `"${process.env[$1]}"`)
+        }
+      ], {
+          context: pkg.webpack.src || 'src',
+        }),
+      // copy misc assets
+      new CopyWebpackPlugin([
+        {
+          from: "**/*",
+        }
+      ], {
+          context: pkg.webpack.src || 'src',
+          ignore: [
+            "*.js",
+            "*.scss",
+            "*.css",
+            "*.html",
+            "*.map",
+            "*.json",
+            "*.txt",
+            "*.md",
+          ],
+        }),
+    ].concat(plugins)
+  }
 }
 
-function init(pkg) {
-  pkg.webpack.devServer = devServer(pkg.webpack.devServer)
+function init() {
+  let pkg = parseConfig()
+  pkg.webpack.devServer = devServer(pkg.webpack)
   pkg.webpack.js = entry(pkg.webpack.entry)
   pkg.webpack.env = env(pkg.webpack.env)
   pkg.webpack.html = html(pkg.webpack.entry)
   pkg.webpack.output = output(pkg.webpack.output)
   pkg.webpack.resolve = resolve(pkg.webpack.resolve)
+  return pkg
 }
 
-function devServer(devServer) {
+function devServer(webpack) {
   return {
     compress: true,
     port: 8080,
-    ...devServer,
-    contentBase: path.resolve(cwd, pkg.webpack.output
-      ? pkg.webpack.output.path
+    ...webpack.devServer,
+    contentBase: path.resolve(cwd, webpack.output
+      ? webpack.output.path
       : defaultOutputPath),
   }
 }
@@ -145,10 +151,7 @@ function entry(entries) {
 
 function env(env = {}) {
   return reduce(env, (r, value, key) => {
-    if ("$" == value.charAt(0))
-      r[`process.env.${key}`] = JSON.stringify(process.env[value.substring(1)])
-    else
-      r[`process.env.${key}`] = JSON.stringify(value)
+    r[`process.env.${key}`] = JSON.stringify(value)
     return r
   }, {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
@@ -176,6 +179,20 @@ function output(output) {
     path: path.resolve(cwd, output
       ? output.path
       : defaultOutputPath),
+  }
+}
+
+function parseConfig() {
+  try {
+    let json = require(cwd + "/package.json"),
+      jsonString = JSON.stringify(json, null, 2),
+      parsedString = jsonString.replace(processEnvRegExp, (match, $1) => `"${process.env[$1]}"`),
+      pkg = JSON.parse(parsedString)
+    console.log("config::", JSON.stringify(pkg.webpack, null, 2))
+    return pkg
+  } catch (err) {
+    console.log("webpack-config-starter err parsing package.json", err)
+    return
   }
 }
 
