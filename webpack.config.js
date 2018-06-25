@@ -12,14 +12,16 @@ const path = require("path"),
   ExtractTextPlugin = require("extract-text-webpack-plugin"),
   CopyWebpackPlugin = require('copy-webpack-plugin'),
   ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin"),
+  CleanWebpackPlugin = require('clean-webpack-plugin'),
   webpack = require("webpack")
 
 const cwd = process.cwd(),
   pkg = require(cwd + "/package.json"),
-  defaultOutputPath = "dist"
+  defaultOutputPath = "dist",
+  processEnvRegExp = /"process.env.(.*)"/gm
 
-console.log("config::", JSON.stringify(pkg.webpack, null, 2))
 init(pkg)
+console.log("config::", JSON.stringify(pkg.webpack, null, 2))
 
 module.exports = {
   devtool: "source-map",
@@ -71,8 +73,10 @@ module.exports = {
     ]
   },
   plugins: [
+    new CleanWebpackPlugin([pkg.webpack.output.path], {
+      root: cwd,
+    }),
     new webpack.DefinePlugin(pkg.webpack.env),
-    new CleanWebpackPlugin(pkg.webpack.output.path),
     new webpack.HotModuleReplacementPlugin(),
     new ExtractTextPlugin({
       filename: "[hash].[name].css",
@@ -81,26 +85,33 @@ module.exports = {
     new ScriptExtHtmlWebpackPlugin({
       defaultAttribute: 'defer'
     }),
+    // copy text based files & transform process.env vars
     new CopyWebpackPlugin([
       {
-        context: pkg.webpack.src || 'src',
-        from: '**/*',
-      },
+        from: "**/*.+(json|txt|md)",
+        transform: (content, path) => content.toString().replace(processEnvRegExp, (match, $1) => `"${process.env[$1]}"`)
+      }
     ], {
+        context: pkg.webpack.src || 'src',
+      }),
+    // copy misc assets
+    new CopyWebpackPlugin([
+      {
+        from: "**/*",
+      }
+    ], {
+        context: pkg.webpack.src || 'src',
         ignore: [
-          '*.js',
-          '*.scss',
-          '*.css',
-          '*.html',
-          '*.map',
+          "*.js",
+          "*.scss",
+          "*.css",
+          "*.html",
+          "*.map",
+          "*.json",
+          "*.txt",
+          "*.md",
         ],
       }),
-    new CopyWebpackPlugin([
-      {
-        context: pkg.webpack.src || 'src',
-        from: 'asset/**/*',
-      },
-    ])
   ]
 }
 
