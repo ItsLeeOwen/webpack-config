@@ -12,7 +12,6 @@ const path = require("path"),
   ExtractTextPlugin = require("extract-text-webpack-plugin"),
   CopyWebpackPlugin = require('copy-webpack-plugin'),
   ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin"),
-  CleanWebpackPlugin = require('clean-webpack-plugin'),
   webpack = require("webpack")
 
 const cwd = process.cwd(),
