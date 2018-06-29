@@ -12,6 +12,7 @@ const path = require("path"),
   ExtractTextPlugin = require("extract-text-webpack-plugin"),
   CopyWebpackPlugin = require('copy-webpack-plugin'),
   ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin"),
+  MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   webpack = require("webpack")
 
 const cwd = process.cwd(),
@@ -54,6 +55,20 @@ module.exports = function (opts = {}) {
           }
         },
         {
+          test: /\.css$/,
+          use: [
+            {
+              loader: MiniCssExtractPlugin.loader,
+              options: {
+                // you can specify a publicPath here
+                // by default it use publicPath in webpackOptions.output
+                //publicPath: '../'
+              }
+            },
+            "css-loader"
+          ]
+        },
+        {
           test: /\.scss$/,
           use: ExtractTextPlugin.extract({
             fallback: 'style-loader',
@@ -71,19 +86,6 @@ module.exports = function (opts = {}) {
                 }
               }]
           })
-        },
-        {
-          test: /\.css$/,
-          use: ExtractTextPlugin.extract({
-            fallback: 'style-loader',
-            use: [
-              {
-                loader: "css-loader",
-                options: {
-                  sourceMap: true,
-                }
-              }]
-          })
         }
       ]
     },
@@ -94,7 +96,11 @@ module.exports = function (opts = {}) {
       new webpack.DefinePlugin(pkg.webpack.env),
       new webpack.HotModuleReplacementPlugin(),
       new ExtractTextPlugin({
-        filename: "[hash].[name].css",
+        filename: pkg.webpack.extractCSS || "[hash].[name].css",
+      }),
+      new MiniCssExtractPlugin({
+        filename: pkg.webpack.extractCSS || "[hash].[name].css",
+        chunkFilename: "[id].css"
       }),
       ...pkg.webpack.html,
       new ScriptExtHtmlWebpackPlugin({
