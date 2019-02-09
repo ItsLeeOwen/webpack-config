@@ -4,13 +4,10 @@ const path = require("path"),
   map = require("lodash/map"),
   reduce = require("lodash/reduce"),
   pickBy = require("lodash/pickBy"),
-  isArray = require("lodash/isArray"),
-  isObject = require("lodash/isArray"),
-  isString = require("lodash/isString"),
   HtmlWebpackPlugin = require("html-webpack-plugin"),
   CleanWebpackPlugin = require("clean-webpack-plugin"),
-  ExtractTextPlugin = require("extract-text-webpack-plugin"),
-  CopyWebpackPlugin = require('copy-webpack-plugin'),
+  MiniCssExtractPlugin = require("mini-css-extract-plugin"),
+  CopyWebpackPlugin = require("copy-webpack-plugin"),
   ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin"),
   webpack = require("webpack")
 
@@ -33,75 +30,71 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: /(node_modules|bower_components)/,
-        include: [
-          path.resolve(cwd, "src"),
-          path.resolve(cwd, "lib"),
-        ],
+        include: [path.resolve(cwd, "src"), path.resolve(cwd, "lib")],
         use: {
-          loader: 'babel-loader',
+          loader: "babel-loader",
           options: pkg.babel || {
-            "presets": [
-              "env",
-              "stage-0",
-              "es2017",
-              "react"
-            ]
-          }
-        }
+            presets: ["@babel/env", "@babel/react"],
+          },
+        },
       },
       {
         test: /\.scss$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            {
-              loader: "css-loader",
-              options: {
-                sourceMap: true,
-              }
-            }, {
-              loader: "sass-loader",
-              options: {
-                outputStyle: 'compressed',
-                sourceMap: true,
-              }
-            }]
-        })
-      }
-    ]
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader,
+            options: {
+              //publicPath: "../",
+            },
+          },
+          {
+            loader: "css-loader",
+            options: {
+              sourceMap: true,
+            },
+          },
+          {
+            loader: "sass-loader",
+            options: {
+              outputStyle: "compressed",
+              sourceMap: true,
+            },
+          },
+        ],
+      },
+    ],
   },
   plugins: [
     new webpack.DefinePlugin(pkg.webpack.env),
     new CleanWebpackPlugin(pkg.webpack.output.path),
     new webpack.HotModuleReplacementPlugin(),
-    new ExtractTextPlugin({
+    new MiniCssExtractPlugin({
       filename: "[hash].[name].css",
+      chunkFilename: "[id].css",
     }),
+
     ...pkg.webpack.html,
     new ScriptExtHtmlWebpackPlugin({
-      defaultAttribute: 'defer'
+      defaultAttribute: "defer",
     }),
+    new CopyWebpackPlugin(
+      [
+        {
+          context: pkg.webpack.src || "src",
+          from: "**/*",
+        },
+      ],
+      {
+        ignore: ["*.js", "*.scss", "*.css", "*.html", "*.map"],
+      }
+    ),
     new CopyWebpackPlugin([
       {
-        context: pkg.webpack.src || 'src',
-        from: '**/*',
+        context: pkg.webpack.src || "src",
+        from: "asset/**/*",
       },
-    ], {
-        ignore: [
-          '*.js',
-          '*.scss',
-          '*.css',
-          '*.html',
-          '*.map',
-        ],
-      }),
-    new CopyWebpackPlugin([
-      {
-        context: pkg.webpack.src || 'src',
-        from: 'asset/**/*',
-      },
-    ])
-  ]
+    ]),
+  ],
 }
 
 function init(pkg) {
@@ -118,15 +111,16 @@ function devServer(devServer) {
     compress: true,
     port: 8080,
     ...devServer,
-    contentBase: path.resolve(cwd, pkg.webpack.output
-      ? pkg.webpack.output.path
-      : defaultOutputPath),
+    contentBase: path.resolve(
+      cwd,
+      pkg.webpack.output ? pkg.webpack.output.path : defaultOutputPath
+    ),
   }
 }
 
 function entry(entries) {
   entries = pickBy(entries, (value, key) => {
-    let ext = key.substr(key.lastIndexOf('.') + 1)
+    let ext = key.substr(key.lastIndexOf(".") + 1)
     return ext == "js" || ext == "css"
   })
   entries = mapValues(entries, value => path.resolve(cwd, value))
@@ -134,25 +128,35 @@ function entry(entries) {
 }
 
 function env(env = {}) {
-  return reduce(env, (r, value, key) => {
-    if ("$" == value.charAt(0))
-      r[`process.env.${key}`] = JSON.stringify(process.env[value.substring(1)])
-    else
-      r[`process.env.${key}`] = JSON.stringify(value)
-    return r
-  }, {
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-    })
+  return reduce(
+    env,
+    (r, value, key) => {
+      if ("$" == value.charAt(0))
+        r[`process.env.${key}`] = JSON.stringify(
+          process.env[value.substring(1)]
+        )
+      else r[`process.env.${key}`] = JSON.stringify(value)
+      return r
+    },
+    {
+      "process.env.NODE_ENV": JSON.stringify(
+        process.env.NODE_ENV || "development"
+      ),
+    }
+  )
 }
 
 function html(entries) {
-  entries = pickBy(entries, (value, key) => "html" == value.substr(value.lastIndexOf('.') + 1))
+  entries = pickBy(
+    entries,
+    (value, key) => "html" == value.substr(value.lastIndexOf(".") + 1)
+  )
   return map(entries, (value, key) => {
     return new HtmlWebpackPlugin({
       filename: key,
       template: value,
       inject: "head",
-      chunks: [key.replace(".html", "")]
+      chunks: [key.replace(".html", "")],
       //inject: false,
     })
   })
@@ -163,15 +167,17 @@ function output(output) {
     filename: "[hash].[name].js",
     ...output,
     strictModuleExceptionHandling: true,
-    path: path.resolve(cwd, output
-      ? output.path
-      : defaultOutputPath),
+    path: path.resolve(cwd, output ? output.path : defaultOutputPath),
   }
 }
 
 function resolve(resolve = {}) {
   return {
     ...resolve,
-    modules: [path.resolve(cwd, "src"), path.resolve(cwd, "lib"), "node_modules"].concat(resolve.modules || [])
+    modules: [
+      path.resolve(cwd, "src"),
+      path.resolve(cwd, "lib"),
+      "node_modules",
+    ].concat(resolve.modules || []),
   }
 }
