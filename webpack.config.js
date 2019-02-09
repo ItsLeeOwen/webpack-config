@@ -12,8 +12,9 @@ const path = require("path"),
   webpack = require("webpack")
 
 const cwd = process.cwd(),
-  pkg = require(cwd + "/package.json"),
-  defaultOutputPath = "dist"
+  processEnvRegExp = /"process.env.(.*)"/gm,
+  defaultOutputPath = "dist",
+  pkg = init()
 
 console.log("config::", JSON.stringify(pkg.webpack, null, 2))
 init(pkg)
@@ -140,23 +141,25 @@ module.exports = {
   ],
 }
 
-function init(pkg) {
-  pkg.webpack.devServer = devServer(pkg.webpack.devServer)
+function init() {
+  let pkg = parseConfig()
+  pkg.webpack.devServer = devServer(pkg.webpack)
   pkg.webpack.js = entry(pkg.webpack.entry)
   pkg.webpack.env = env(pkg.webpack.env)
   pkg.webpack.html = html(pkg.webpack.entry)
   pkg.webpack.output = output(pkg.webpack.output)
   pkg.webpack.resolve = resolve(pkg.webpack.resolve)
+  return pkg
 }
 
-function devServer(devServer) {
+function devServer(webpack) {
   return {
     compress: true,
     port: 8080,
     ...devServer,
     contentBase: path.resolve(
       cwd,
-      pkg.webpack.output ? pkg.webpack.output.path : defaultOutputPath
+      webpack.output ? webpack.output.path : defaultOutputPath
     ),
   }
 }
@@ -211,6 +214,23 @@ function output(output) {
     ...output,
     strictModuleExceptionHandling: true,
     path: path.resolve(cwd, output ? output.path : defaultOutputPath),
+  }
+}
+
+function parseConfig() {
+  try {
+    let json = require(cwd + "/package.json"),
+      jsonString = JSON.stringify(json, null, 2),
+      parsedString = jsonString.replace(
+        processEnvRegExp,
+        (match, $1) => `"${process.env[$1]}"`
+      ),
+      pkg = JSON.parse(parsedString)
+    console.log("config::", JSON.stringify(pkg.webpack, null, 2))
+    return pkg
+  } catch (err) {
+    console.log("webpack-config-starter err parsing package.json", err)
+    return
   }
 }
 
