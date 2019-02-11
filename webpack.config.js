@@ -94,8 +94,8 @@ module.exports = {
           {
             loader: "css-loader",
             options: {
-							sourceMap: true,
-							url: false,
+              sourceMap: true,
+              url: false,
             },
           },
           {
@@ -111,7 +111,9 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin(pkg.webpack.env),
-    new CleanWebpackPlugin(pkg.webpack.output.path),
+    new CleanWebpackPlugin(pkg.webpack.output.path, {
+      root: cwd,
+    }),
     new webpack.HotModuleReplacementPlugin(),
     new MiniCssExtractPlugin({
       filename: "[hash].[name].css",
@@ -156,8 +158,8 @@ function init() {
 function devServer(webpack) {
   return {
     compress: true,
-		port: 8080,
-		open: true,
+    port: 8080,
+    open: true,
     ...devServer,
     contentBase: path.resolve(
       cwd,
