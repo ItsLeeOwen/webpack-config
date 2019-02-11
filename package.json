@@ -38,6 +38,7 @@
     "@babel/preset-react": "^7.0.0",
     "ajv": "^6.9.1",
     "babel-loader": "^8.0.5",
+    "clean-webpack-plugin": "^1.0.1",
     "copy-webpack-plugin": "^4.6.0",
     "css-loader": "^2.1.0",
     "hoek": "^6.1.2",
@@ -52,9 +53,7 @@
     "webpack-cli": "^3.2.3",
     "webpack-dev-server": "^3.1.14"
   },
-  "devDependencies": {
-    "clean-webpack-plugin": "^1.0.1"
-  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "node_modules/.bin/webpack",
