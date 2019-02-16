@@ -19,24 +19,8 @@ Add a webpack block to package.json with your entry files:
 }
 ```
 
-Add environment variables to your project, accessible on `process.env`. Example: `process.env.GREETING`.
-
-```json
-"webpack": {
-	"entry": {
-		"index.html": "./src/index.html",
-		"index.js": "./src/index.js"
-	},
-	"env": {
-		"GREETING": "cześć",
-		"GREETING_FROM_ENV": "$GREETING_FROM_ENV"
-	}
-}
-```
-
-Values prefixed with `$` will be assigned from your environment.
-Source environment variables from a `.env` file at the root of your project:
+Want to expose environment variables to your javascript? Use a .env file in the root of your project. The variables will be accessible on `process.env`, such as `process.env.PUBLIC_KEY`.
 
 ```sh
-GREETING_FROM_ENV=alo
+PUBLIC_KEY=asdf
 ```

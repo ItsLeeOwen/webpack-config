@@ -9,10 +9,10 @@ const path = require("path"),
   MiniCssExtractPlugin = require("mini-css-extract-plugin"),
   CopyWebpackPlugin = require("copy-webpack-plugin"),
   ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin"),
+  dotenv = require("dotenv"),
   webpack = require("webpack")
 
 const cwd = process.cwd(),
-  processEnvRegExp = /"process.env.(.*)"/gm,
   defaultOutputPath = "dist",
   pkg = init()
 
@@ -148,7 +148,7 @@ function init() {
   let pkg = parseConfig()
   pkg.webpack.devServer = devServer(pkg.webpack)
   pkg.webpack.js = entry(pkg.webpack.entry)
-  pkg.webpack.env = env(pkg.webpack.env)
+  pkg.webpack.env = env()
   pkg.webpack.html = html(pkg.webpack.entry)
   pkg.webpack.output = output(pkg.webpack.output)
   pkg.webpack.resolve = resolve(pkg.webpack.resolve)
@@ -177,22 +177,26 @@ function entry(entries) {
   return mapKeys(entries, (value, key) => key.replace(".js", ""))
 }
 
-function env(env = {}) {
+function env() {
+  const env = dotenv.config({
+    path: path.resolve(cwd, ".env"),
+  })
+
+  if (env.error) {
+    console.log(
+      "Unable to load environment variables from '.env': ",
+      env.error.message
+    )
+    return {}
+  }
+
   return reduce(
-    env,
-    (r, value, key) => {
-      if ("$" == value.charAt(0))
-        r[`process.env.${key}`] = JSON.stringify(
-          process.env[value.substring(1)]
-        )
-      else r[`process.env.${key}`] = JSON.stringify(value)
-      return r
-    },
-    {
-      "process.env.NODE_ENV": JSON.stringify(
-        process.env.NODE_ENV || "development"
-      ),
-    }
+    env.parsed,
+    (env, value, key) => ({
+      ...env,
+      [`process.env.${key}`]: JSON.stringify(value),
+    }),
+    {}
   )
 }
 
@@ -223,15 +227,9 @@ function output(output) {
 
 function parseConfig() {
   try {
-    let json = require(cwd + "/package.json"),
-      jsonString = JSON.stringify(json, null, 2),
-      parsedString = jsonString.replace(
-        processEnvRegExp,
-        (match, $1) => `"${process.env[$1]}"`
-      ),
-      pkg = JSON.parse(parsedString)
-    console.log("config::", JSON.stringify(pkg.webpack, null, 2))
-    return pkg
+    let json = require(cwd + "/package.json")
+    // console.log("config::", JSON.stringify(json.webpack, null, 2))
+    return json
   } catch (err) {
     console.log("webpack-config-starter err parsing package.json", err)
     return
