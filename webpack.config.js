@@ -10,7 +10,8 @@ const path = require("path"),
   CopyWebpackPlugin = require("copy-webpack-plugin"),
   ScriptExtHtmlWebpackPlugin = require("script-ext-html-webpack-plugin"),
   dotenv = require("dotenv"),
-  webpack = require("webpack")
+  webpack = require("webpack"),
+  VueLoaderPlugin = require("vue-loader/lib/plugin")
 
 const cwd = process.cwd(),
   defaultOutputPath = "dist",
@@ -29,13 +30,17 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.vue$/,
+        loader: "vue-loader",
+      },
+      {
+        test: /\.js|.jsx$/,
         exclude: /(node_modules|bower_components)/,
         include: [path.resolve(cwd, "src"), path.resolve(cwd, "lib")],
         use: {
           loader: "babel-loader",
           options: pkg.babel || {
-            presets: ["@babel/env", "@babel/react"],
+            presets: ["@babel/env", "@babel/react", "@vue/babel-preset-jsx"],
             plugins: [
               "@babel/plugin-proposal-function-bind",
               "@babel/plugin-proposal-export-default-from",
@@ -86,6 +91,9 @@ module.exports = {
         test: /\.scss$/,
         use: [
           {
+            loader: "vue-style-loader",
+          },
+          {
             loader: MiniCssExtractPlugin.loader,
             options: {
               //publicPath: "../",
@@ -107,6 +115,10 @@ module.exports = {
           },
         ],
       },
+      {
+        test: /\.css$/,
+        use: ["vue-style-loader", "css-loader"],
+      },
     ],
   },
   plugins: [
@@ -119,6 +131,7 @@ module.exports = {
       filename: "[hash].[name].css",
       chunkFilename: "[id].css",
     }),
+    new VueLoaderPlugin(),
 
     ...pkg.webpack.html,
     new ScriptExtHtmlWebpackPlugin({
@@ -239,6 +252,10 @@ function parseConfig() {
 function resolve(resolve = {}) {
   return {
     ...resolve,
+    alias: {
+      vue$: "vue/dist/vue.esm.js",
+    },
+    extensions: ["*", ".js", ".jsx", ".vue", ".json"],
     modules: [
       path.resolve(cwd, "src"),
       path.resolve(cwd, "lib"),
