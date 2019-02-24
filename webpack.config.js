@@ -127,17 +127,11 @@ module.exports = {
     }),
     new webpack.HotModuleReplacementPlugin(),
     new MiniCssExtractPlugin({
-      filename: pkg.webpack.output.filename
-        ? `${pkg.webpack.output.filename}.css`
-        : "[hash].[name].css",
+      filename: `${pkg.webpack.outputFilenameConvention}.css`,
       chunkFilename: "[id].css",
     }),
     new VueLoaderPlugin(),
-
     ...pkg.webpack.html,
-    new ScriptExtHtmlWebpackPlugin({
-      defaultAttribute: "defer",
-    }),
     new CopyWebpackPlugin(
       [
         {
@@ -164,7 +158,7 @@ function init() {
   pkg.webpack.js = entry(pkg.webpack.entry)
   pkg.webpack.env = env()
   pkg.webpack.html = html(pkg.webpack.entry)
-  pkg.webpack.output = output(pkg.webpack.output)
+  pkg.webpack.output = output(pkg.webpack)
   pkg.webpack.resolve = resolve(pkg.webpack.resolve)
   return pkg
 }
@@ -219,7 +213,7 @@ function html(entries) {
     entries,
     (value, key) => "html" == value.substr(value.lastIndexOf(".") + 1)
   )
-  return map(entries, (value, key) => {
+  const html = map(entries, (value, key) => {
     return new HtmlWebpackPlugin({
       filename: key,
       template: value,
@@ -228,12 +222,25 @@ function html(entries) {
       //inject: false,
     })
   })
+
+  if (html.length) {
+    html.push(
+      new ScriptExtHtmlWebpackPlugin({
+        defaultAttribute: "defer",
+      })
+    )
+  }
+  return html
 }
 
-function output(output = {}) {
+function output(webpack) {
+  const { output = {} } = webpack
+  webpack.outputFilenameConvention = output.filename
+    ? output.filename
+    : "[hash].[name]"
   return {
     ...output,
-    filename: output.filename ? `${output.filename}.js` : "[hash].[name].js",
+    filename: `${webpack.outputFilenameConvention}.js`,
     strictModuleExceptionHandling: true,
     path: path.resolve(cwd, output.path ? output.path : defaultOutputPath),
   }
