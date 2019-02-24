@@ -154,12 +154,12 @@ module.exports = {
 
 function init() {
   let pkg = parseConfig()
-  pkg.webpack.devServer = devServer(pkg.webpack)
   pkg.webpack.js = entry(pkg.webpack.entry)
   pkg.webpack.env = env()
   pkg.webpack.html = html(pkg.webpack.entry)
   pkg.webpack.output = output(pkg.webpack)
   pkg.webpack.resolve = resolve(pkg.webpack.resolve)
+  pkg.webpack.devServer = devServer(pkg.webpack)
   return pkg
 }
 
