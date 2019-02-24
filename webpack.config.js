@@ -18,7 +18,6 @@ const cwd = process.cwd(),
   pkg = init()
 
 console.log("config::", JSON.stringify(pkg.webpack, null, 2))
-init(pkg)
 
 module.exports = {
   devtool: "source-map",
@@ -128,7 +127,9 @@ module.exports = {
     }),
     new webpack.HotModuleReplacementPlugin(),
     new MiniCssExtractPlugin({
-      filename: "[hash].[name].css",
+      filename: pkg.webpack.output.filename
+        ? `${pkg.webpack.output.filename}.css`
+        : "[hash].[name].css",
       chunkFilename: "[id].css",
     }),
     new VueLoaderPlugin(),
@@ -176,7 +177,7 @@ function devServer(webpack) {
     ...devServer,
     contentBase: path.resolve(
       cwd,
-      webpack.output ? webpack.output.path : defaultOutputPath
+      webpack.output.path ? webpack.output.path : defaultOutputPath
     ),
   }
 }
@@ -229,12 +230,12 @@ function html(entries) {
   })
 }
 
-function output(output) {
+function output(output = {}) {
   return {
-    filename: "[hash].[name].js",
     ...output,
+    filename: output.filename ? `${output.filename}.js` : "[hash].[name].js",
     strictModuleExceptionHandling: true,
-    path: path.resolve(cwd, output ? output.path : defaultOutputPath),
+    path: path.resolve(cwd, output.path ? output.path : defaultOutputPath),
   }
 }
 
