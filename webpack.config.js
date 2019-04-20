@@ -122,9 +122,11 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin(pkg.webpack.env),
-    new CleanWebpackPlugin(pkg.webpack.output.path, {
-      root: cwd,
-    }),
+    new CleanWebpackPlugin(
+      /*pkg.webpack.output.path,*/ {
+        root: cwd,
+      }
+    ),
     new webpack.HotModuleReplacementPlugin(),
     new MiniCssExtractPlugin({
       filename: `${pkg.webpack.outputFilenameConvention}.css`,
